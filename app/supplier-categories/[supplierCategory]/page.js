@@ -2,7 +2,8 @@
 
 import React from 'react';
 import { useParams } from 'next/navigation';
-import SupplierList from '../../../components/SupplierList'; // Adjust the path
+// import SupplierList from '../../../components/SupplierList';
+import SupplierList from '@/src/components/supplier page/SupplierList';
 
 const CategoryPage = () => {
   const params = useParams();
