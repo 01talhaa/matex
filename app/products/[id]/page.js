@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import { StarIcon, TruckIcon, ShieldCheckIcon, DollarSignIcon } from 'lucide-react';
+import Header from '@/src/components/homepage/Header';
 
 const ProductDetailsPage = () => {
   const params = useParams();
@@ -70,6 +71,7 @@ const ProductDetailsPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
+      {/* <Header/> */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Main Product Section */}
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
