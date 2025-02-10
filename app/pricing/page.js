@@ -1,21 +1,13 @@
 "use client"
 
 import { useState } from "react"
-// import Navbar from "@/components/layout/Navbar"
 import Navbar from "@/src/components/pricepage/Navbar"
-// import Sidebar from "@/components/layout/Sidebar"
 import Sidebar from "@/src/components/pricepage/Sidebar"
-// import FilterBar from "@/components/filters/FilterBar"
 import FilterBar from "@/src/components/pricepage/filters/FilterBar"
-// import PriceTable from "@/components/pricing/PriceTable"
 import PriceTable from "@/src/components/pricepage/pricing/PriceTable"
-// import PriceStats from "@/components/pricing/PriceStats"
 import PriceStats from "@/src/components/pricepage/pricing/PriceStats"
-// import PriceChart from "@/components/pricing/PriceChart"
 import PriceChart from "@/src/components/pricepage/pricing/PriceChart"
-// import Footer from "@/components/layout/Footer"
 import Footer from "@/src/components/pricepage/layout/Footer"
-// import { PriceProvider } from "@/context/PriceContext"
 import { PriceProvider } from "@/src/context/PriceContext"
 
 export default function PricingDashboard() {
