@@ -16,9 +16,11 @@ import {
   CheckCircle,
   Award,
   TrendingUp,
-  X
+  X,
+  ArrowBigLeft
 } from 'lucide-react';
 import SupplierReviewAndRatings from './SupplierReviewAndRatings';
+import Header from '../homepage/Header';
 
 const StatDetails = ({ stat, onClose }) => {
   const detailsContent = {
@@ -229,6 +231,21 @@ const SupplierDetails = ({ supplier }) => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Add Home Navigation Header */}
+      <div className="bg-white shadow-sm">
+        <div className="container mx-auto px-4">
+          <div className="py-4">
+            <Link 
+              href="/suppliers" 
+              className="inline-flex items-center text-gray-600 hover:text-blue-600 transition-colors"
+            >
+              <ArrowBigLeft className="w-5 h-5 mr-2" />
+              <span>Back</span>
+            </Link>
+          </div>
+        </div>
+      </div>
+
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white">
         <div className="container mx-auto px-4 py-8">
