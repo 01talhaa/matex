@@ -393,32 +393,82 @@ export default function Homepage() {
       </section>
 
       {/* Newsletter Section */}
-      <section className="py-20 bg-blue-600">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center text-white">
-            <h2 className="text-3xl font-bold mb-4">
-              Stay Updated with Market Trends
-            </h2>
-            <p className="mb-8 opacity-90">
-              Get weekly insights about raw material prices, market analysis,
-              and industry news
-            </p>
-            <form className="flex gap-4 max-w-2xl mx-auto">
-              <input
-                type="email"
-                placeholder="Enter your email"
-                className="flex-1 px-6 py-3 rounded-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-              />
-              <button className="px-8 py-3 bg-yellow-400 text-blue-900 rounded-lg font-semibold hover:bg-yellow-300 transition">
-                Subscribe
-              </button>
-            </form>
-            <p className="mt-4 text-sm opacity-75">
-              By subscribing, you agree to receive marketing emails from us.
-            </p>
+<section className="py-16 sm:py-20 bg-gradient-to-r from-blue-600 to-blue-700 relative overflow-hidden">
+  {/* Background Pattern */}
+  <div className="absolute inset-0 opacity-10">
+    <div className="absolute inset-0 bg-repeat bg-[url('/pattern.svg')]"></div>
+  </div>
+
+  <div className="container mx-auto px-4 relative z-10">
+    <div className="max-w-4xl mx-auto text-center">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        className="space-y-6"
+      >
+        <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-4">
+          Stay Updated with Market Trends
+        </h2>
+        <p className="text-sm sm:text-base text-blue-100 mb-8 max-w-2xl mx-auto">
+          Get weekly insights about raw material prices, market analysis,
+          and industry news delivered straight to your inbox
+        </p>
+
+        <form className="flex flex-col sm:flex-row gap-3 sm:gap-4 max-w-2xl mx-auto">
+          <div className="flex-1 relative group">
+            <input
+              type="email"
+              placeholder="Enter your email"
+              className="w-full px-6 py-3 sm:py-4 rounded-lg text-gray-800 bg-white/95 backdrop-blur-sm 
+                       placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 
+                       shadow-lg transition-all duration-300 group-hover:shadow-xl"
+            />
+            <div className="absolute inset-0 bg-blue-200 rounded-lg opacity-0 group-hover:opacity-10 
+                          transition-opacity duration-300"></div>
           </div>
-        </div>
-      </section>
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="px-8 py-3 sm:py-4 bg-yellow-400 hover:bg-yellow-300 text-blue-900 
+                     rounded-lg font-semibold shadow-lg transition-all duration-300 
+                     hover:shadow-xl hover:text-blue-800 flex items-center justify-center 
+                     space-x-2 group"
+          >
+            <span>Subscribe</span>
+            <svg
+              className="w-4 h-4 transform group-hover:translate-x-1 transition-transform"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M14 5l7 7m0 0l-7 7m7-7H3"
+              />
+            </svg>
+          </motion.button>
+        </form>
+
+        <motion.p
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.2 }}
+          className="mt-6 text-xs sm:text-sm text-blue-100/80"
+        >
+          🔒 We respect your privacy. Unsubscribe at any time.
+        </motion.p>
+      </motion.div>
+    </div>
+  </div>
+
+  {/* Decorative Elements */}
+  <div className="absolute -bottom-16 -left-16 w-64 h-64 bg-yellow-400/10 rounded-full blur-3xl"></div>
+  <div className="absolute -top-16 -right-16 w-64 h-64 bg-blue-400/10 rounded-full blur-3xl"></div>
+</section>
 
 
       {/* Enhanced Footer with More Sections */}
