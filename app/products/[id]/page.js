@@ -1,21 +1,46 @@
+// app/products/[id]/page.js
 'use client'
 
-import { useState, useEffect } from 'react';
-import Image from 'next/image';
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
-import { StarIcon, TruckIcon, ShieldCheckIcon, DollarSignIcon } from 'lucide-react';
+import { motion } from 'framer-motion';
+import Breadcrumb from '@/src/utils/Breadcrumb';
+import ProductImageGallery from '@/src/utils/ProductImageGallery';
+import ProductInfo from '@/src/components/products page/ProductInfo';
+import ProductTabs from '@/src/components/products page/ProductTabs';
+import ContactModal from '@/src/components/supplier page/ContactModal';
+import FloatingContactButton from '@/src/utils/FloatingContactButton';
+import Notification from '@/src/utils/Notification';
+import Loading from '@/src/utils/Loading';
+import ProgressBar from '@/src/utils/ProgressBar';
 
 const ProductDetailsPage = () => {
   const params = useParams();
   const [activeTab, setActiveTab] = useState('description');
   const [selectedImage, setSelectedImage] = useState(0);
   const [product, setProduct] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [showShareTooltip, setShowShareTooltip] = useState(false);
+  const [showNotification, setShowNotification] = useState(false);
+  const [quantity, setQuantity] = useState(1);
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const imageRef = useRef(null);
 
   useEffect(() => {
-    // In a real app, you would fetch product data from an API
-    // For now, we'll use sample data based on the ID
+    const handleScroll = () => {
+      const totalScroll = document.documentElement.scrollHeight - window.innerHeight;
+      const currentProgress = (window.scrollY / totalScroll) * 100;
+      setScrollProgress(currentProgress);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
     const fetchProduct = () => {
-      // Sample product data - in real app, this would come from an API
+      // Sample product data
       const sampleProduct = {
         id: params.id,
         name: `Premium Steel ${params.id === "1" ? "Bars" : params.id === "2" ? "Sheets" : "Tubes"}`,
@@ -24,13 +49,42 @@ const ProductDetailsPage = () => {
         rating: 4.5,
         supplier: "MetalWorks Inc.",
         supplierRating: 4.8,
-        location: "Shanghai",
-        description: `High-quality steel ${params.id === "1" ? "bars" : params.id === "2" ? "sheets" : "tubes"} perfect for industrial applications. Features excellent durability and precision manufacturing.`,
+        location: "Shanghai, China",
+        yearEstablished: 2005,
+        responseTime: "≤24h",
+        deliveryTime: "15-20 days",
+        description: `High-quality steel ${params.id === "1" ? "bars" : params.id === "2" ? "sheets" : "tubes"} perfect for industrial applications. Features excellent durability and precision manufacturing. Our products meet international standards and are suitable for various industrial applications. Each piece undergoes rigorous quality control to ensure consistent performance and reliability.`,
+        features: [
+          "Premium grade stainless steel",
+          "Precision engineered dimensions",
+          "Corrosion resistant",
+          "High tensile strength",
+          "Quality certified",
+          "Custom specifications available"
+        ],
         specifications: {
-          material: "Stainless Steel",
+          material: "304 Stainless Steel",
           thickness: "2.5mm",
           dimensions: params.id === "1" ? "6m length" : params.id === "2" ? "1000mm x 2000mm" : "50mm diameter",
           finish: "Brushed",
+          hardness: "HRB 80",
+          certification: "ISO 9001:2015",
+          tolerance: "±0.1mm",
+          packaging: "Standard export package"
+        },
+        shipping: {
+          methods: [
+            { name: "Sea Freight", time: "15-20 days", cost: "Calculated by volume" },
+            { name: "Air Freight", time: "5-7 days", cost: "Calculated by weight" },
+            { name: "Express", time: "3-5 days", cost: "Door to door service" }
+          ],
+          payment: [
+            "Trade Assurance",
+            "T/T (Bank Transfer)",
+            "L/C (Letter of Credit)",
+            "Western Union"
+          ],
+          certificates: ["ISO 9001", "CE", "RoHS"]
         },
         images: [
           "https://www.toplevelcnc.com/wp-content/uploads/2022/12/MONO-Rotor-.jpg",
@@ -44,8 +98,78 @@ const ProductDetailsPage = () => {
             user: "John D.",
             rating: 5,
             comment: "Excellent quality and fast shipping. Will order again.",
-            date: "2024-01-15"
+            date: "2024-01-15",
+            helpful: 12,
+            replies: 2,
+            verified: true
           },
+          {
+            id: 2,
+            user: "Jane Smith",
+            rating: 4,
+            comment: "Good product for the price, but shipping was a bit slow.",
+            date: "2024-02-01",
+            helpful: 8,
+            replies: 1,
+            verified: true
+          },
+          {
+            id: 3,
+            user: "Mike Johnson",
+            rating: 5,
+            comment: "Excellent service and product quality. The supplier was very responsive to our inquiries.",
+            date: "2024-02-15",
+            helpful: 15,
+            replies: 3,
+            verified: true
+          },
+          {
+            id: 4,
+            user: "Emily Brown",
+            rating: 3,
+            comment: "The product was as described, but the packaging could have been better.",
+            date: "2024-03-01",
+            helpful: 5,
+            replies: 1,
+            verified: true
+          },
+          {
+            id: 5,
+            user: "David Wilson",
+            rating: 4,
+            comment: "Overall a good purchase. Would recommend for industrial applications.",
+            date: "2024-03-15",
+            helpful: 9,
+            replies: 0,
+            verified: true
+          }
+        ],
+        faqs: [
+          {
+            id: 1,
+            question: "What is the lead time for orders?",
+            answer: "Lead times vary depending on the order quantity and specifications. Standard orders typically ship within 15-20 days. For urgent orders, please contact us for expedited processing options."
+          },
+          {
+            id: 2,
+            question: "What are your payment terms?",
+            answer: "We accept multiple payment methods including Trade Assurance, T/T (Bank Transfer), L/C (Letter of Credit), and Western Union. Standard payment terms are 30% deposit, 70% before shipment."
+          },
+          {
+            id: 3,
+            question: "Do you offer custom sizes?",
+            answer: "Yes, we offer custom sizes for many of our products. Custom orders may require a higher MOQ and longer lead time. Please contact us with your specific requirements for detailed information."
+          },
+          {
+            id: 4,
+            question: "What quality certifications do you have?",
+            answer: "Our products are certified with ISO 9001:2015, CE, and RoHS. We can provide all relevant certification documents upon request."
+          },
+          {
+            id: 5,
+            question: "Can you provide samples?",
+            answer: "Yes, we provide samples for quality verification. Sample costs can be refunded on bulk orders. Standard sample delivery time is 7-10 days."
+          }
         ]
       };
 
@@ -57,251 +181,92 @@ const ProductDetailsPage = () => {
     }
   }, [params.id]);
 
+  const handleContactSupplier = () => {
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+  };
+
+  const handleQuantityChange = (value) => {
+    const newQuantity = Math.max(1, value);
+    setQuantity(newQuantity);
+  };
+
+  const handleShare = () => {
+    // Implement share functionality
+    setShowNotification(true);
+    setTimeout(() => setShowNotification(false), 3000);
+  };
+
+  const handleWishlist = () => {
+    setIsWishlisted(!isWishlisted);
+    setShowNotification(true);
+    setTimeout(() => setShowNotification(false), 3000);
+  };
+
+  const fadeInUp = {
+    initial: { opacity: 0, y: 20 },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.5 }
+  };
+
+  const breadcrumbSegments = [
+    { label: 'Home', href: '/' },
+    { label: 'Industrial Supplies', href: '/supplies' },
+    { label: product?.name || 'Loading...', href: '#' },
+  ];
+
   if (!product) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-semibold text-gray-900">Loading...</h2>
-          <p className="mt-2 text-gray-600">Please wait while we fetch the product details.</p>
-        </div>
-      </div>
-    );
+    return <Loading />;
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Main Product Section */}
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-6">
-            {/* Image Gallery */}
-            <div className="space-y-4">
-              <div className="relative h-96 rounded-lg overflow-hidden">
-                <Image
-                  src={product.images[selectedImage]}
-                  alt={product.name}
-                  fill
-                  className="object-cover transition-transform duration-300 hover:scale-105"
-                />
-              </div>
-              <div className="grid grid-cols-4 gap-4">
-                {product.images.map((image, index) => (
-                  <div
-                    key={index}
-                    className={`relative h-24 rounded-lg overflow-hidden cursor-pointer ${
-                      selectedImage === index ? 'ring-2 ring-blue-500' : ''
-                    }`}
-                    onClick={() => setSelectedImage(index)}
-                  >
-                    <Image
-                      src={image}
-                      alt={`${product.name} ${index + 1}`}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <ProgressBar scrollProgress={scrollProgress} />
+      <Notification showNotification={showNotification} isWishlisted={isWishlisted} />
 
-            {/* Product Info */}
-            <div className="space-y-6">
-              <h1 className="text-3xl font-bold text-gray-900">{product.name}</h1>
-              
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center">
-                  <StarIcon size={20} className="text-yellow-400 fill-current" />
-                  <span className="ml-1 text-lg font-semibold">{product.rating}</span>
-                </div>
-                <span className="text-gray-500">|</span>
-                <span className="text-gray-600">50+ orders</span>
-              </div> 
-
-              <div className="border-t border-b py-4">
-                <div className="text-3xl font-bold text-blue-600">${product.price}</div>
-                <div className="text-gray-600 mt-1">MOQ: {product.moq} units</div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-center space-x-2">
-                  <Image
-                    src="https://www.zonbase.com/zonbase/images/landing/salesEstimator/supplier-main.svg"
-                    alt={product.supplier}
-                    width={40}
-                    height={40}
-                    className="rounded-full"
-                  />
-                  <div>
-                    <div className="font-semibold">{product.supplier}</div>
-                    <div className="flex items-center text-sm text-gray-600">
-                      <StarIcon size={16} className="text-yellow-400 fill-current mr-1" />
-                      <span>{product.supplierRating}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <button className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors duration-200 font-semibold">
-                  Request Quote
-                </button>
-                <button className="w-full border-2 border-blue-600 text-blue-600 py-3 px-6 rounded-lg hover:bg-blue-50 transition-colors duration-200 font-semibold">
-                  Contact Supplier
-                </button>
-              </div>
-
-              {/* Buyer Protection */}
-              <div className="bg-gray-50 p-4 rounded-lg space-y-3">
-                <h3 className="font-semibold flex items-center">
-                  <ShieldCheckIcon size={20} className="text-green-600 mr-2" />
-                  Buyer Protection
-                </h3>
-                <div className="space-y-2 text-sm text-gray-600">
-                  <div className="flex items-center">
-                    <DollarSignIcon size={16} className="mr-2" />
-                    <span>Trade Assurance protection</span>
-                  </div>
-                  <div className="flex items-center">
-                    <TruckIcon size={16} className="mr-2" />
-                    <span>Shipping protection</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <motion.div
+          className="bg-white rounded-2xl shadow-xl overflow-hidden"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          <div className="px-4 py-2 sm:px-8 sm:py-4 border-b border-gray-100">
+            <Breadcrumb segments={breadcrumbSegments} />
           </div>
 
-          {/* Tabs Section */}
-          <div className="border-t">
-            <div className="flex border-b">
-              {['description', 'specifications', 'shipping', 'reviews'].map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`px-6 py-4 text-sm font-medium ${
-                    activeTab === tab
-                      ? 'border-b-2 border-blue-600 text-blue-600'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                </button>
-              ))}
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-12 p-4 sm:p-8">
+            <ProductImageGallery
+              images={product.images}
+              selectedImage={selectedImage}
+              setSelectedImage={setSelectedImage}
+              isWishlisted={isWishlisted}
+              handleWishlist={handleWishlist}
+              handleShare={handleShare}
+              showShareTooltip={showShareTooltip}
+            />
 
-            <div className="p-6">
-              {activeTab === 'description' && (
-                <div className="prose max-w-none">
-                  <p>{product.description}</p>
-                </div>
-              )}
-
-              {activeTab === 'specifications' && (
-                <div className="grid grid-cols-2 gap-4">
-                  {Object.entries(product.specifications).map(([key, value]) => (
-                    <div key={key} className="border-b pb-2">
-                      <span className="font-medium text-gray-600">{key}: </span>
-                      <span className="text-gray-900">{value}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {activeTab === 'shipping' && (
-                <div className="space-y-6">
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h3 className="font-semibold text-lg mb-4">Shipping Information</h3>
-                    <div className="grid md:grid-cols-2 gap-6">
-                      <div>
-                        <h4 className="font-medium mb-2">Delivery Options</h4>
-                        <div className="space-y-2 text-gray-600">
-                          <div className="flex items-center">
-                            <TruckIcon size={16} className="mr-2" />
-                            <span>Standard Shipping (15-20 days)</span>
-                          </div>
-                          <div className="flex items-center">
-                            <TruckIcon size={16} className="mr-2" />
-                            <span>Express Shipping (7-10 days)</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div>
-                        <h4 className="font-medium mb-2">Payment Methods</h4>
-                        <div className="space-y-2 text-gray-600">
-                          <div className="flex items-center">
-                            <DollarSignIcon size={16} className="mr-2" />
-                            <span>Trade Assurance</span>
-                          </div>
-                          <div className="flex items-center">
-                            <DollarSignIcon size={16} className="mr-2" />
-                            <span>Bank Transfer</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {activeTab === 'reviews' && (
-                <div className="space-y-6">
-                  {/* Review Summary */}
-                  <div className="flex items-center space-x-4 mb-6">
-                    <div className="text-4xl font-bold text-gray-900">{product.rating}</div>
-                    <div>
-                      <div className="flex items-center">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <StarIcon
-                            key={star}
-                            size={20}
-                            className={`${
-                              star <= product.rating
-                                ? 'text-yellow-400'
-                                : 'text-gray-300'
-                            } fill-current`}
-                          />
-                        ))}
-                      </div>
-                      <div className="text-sm text-gray-600 mt-1">
-                        Based on {product.reviews.length} reviews
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Individual Reviews */}
-                  <div className="space-y-6">
-                    {product.reviews.map((review) => (
-                      <div key={review.id} className="border-b pb-6">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center space-x-2">
-                            <div className="font-medium">{review.user}</div>
-                            <div className="flex">
-                              {[1, 2, 3, 4, 5].map((star) => (
-                                <StarIcon
-                                  key={star}
-                                  size={16}
-                                  className={`${
-                                    star <= review.rating
-                                      ? 'text-yellow-400'
-                                      : 'text-gray-300'
-                                  } fill-current`}
-                                />
-                              ))}
-                            </div>
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {new Date(review.date).toLocaleDateString()}
-                          </div>
-                        </div>
-                        <p className="text-gray-600">{review.comment}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+            <ProductInfo
+              product={product}
+              quantity={quantity}
+              handleQuantityChange={handleQuantityChange}
+              handleContactSupplier={handleContactSupplier}
+            />
           </div>
-        </div>
+
+          <ProductTabs
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            product={product}
+          />
+        </motion.div>
       </div>
+
+      <ContactModal isModalOpen={isModalOpen} handleCloseModal={handleCloseModal} />
+      <FloatingContactButton handleContactSupplier={handleContactSupplier} />
     </div>
   );
 };

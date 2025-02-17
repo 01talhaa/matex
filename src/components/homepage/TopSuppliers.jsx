@@ -54,9 +54,12 @@ function TopSuppliers() {
                   <p>Specializes in: Metals, Plastics</p>
                   <p>Location: Dhaka, Bangladesh</p>
                 </div>
+                {/* <Link href={`/supplier/${index + 1}`}> */}
+                <Link href={`/suppliers`}>
                 <button className="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
                   View Profile
                 </button>
+                </Link>
               </div>
             </SwiperSlide>
           ))}
