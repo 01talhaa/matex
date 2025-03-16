@@ -1,11 +1,12 @@
-// src/app/components/SupplierForm.js
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useFormAnimation } from "@/src/utils/animations";
-import { FaUser, FaPhone, FaEnvelope, FaLock, FaIdCard, FaBriefcase, FaFileUpload } from "react-icons/fa";
+import { FaUser, FaPhone, FaEnvelope, FaLock, FaIdCard, FaBriefcase, FaFileUpload, FaSpinner } from "react-icons/fa";
+import { useRouter } from "next/navigation";
 
 const SupplierForm = ({ onSuccess, setError }) => {
     const [step, setStep] = useState(1);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [formData, setFormData] = useState({
         companyName: "",
         contactNumber: "",
@@ -15,9 +16,10 @@ const SupplierForm = ({ onSuccess, setError }) => {
         nidPassport: "",
         tradeLicense: "",
         documents: [],
-        documentPreviews: [] // new state to store base64 encoded previews
+        documentPreviews: [] // state to store base64 encoded previews
     });
     const formAnimation = useFormAnimation();
+    const router = useRouter();
 
     useEffect(() => {
         // generate previews when documents change
@@ -94,8 +96,8 @@ const SupplierForm = ({ onSuccess, setError }) => {
         }
         
         try {
-            // For final form submission
-            const documentBase64 = formData.documentPreviews || [];
+            setIsSubmitting(true);
+            setError('');
             
             // Prepare data for submission
             const submissionData = {
@@ -105,12 +107,13 @@ const SupplierForm = ({ onSuccess, setError }) => {
                 password: formData.password,
                 nidPassport: formData.nidPassport,
                 tradeLicense: formData.tradeLicense,
-                documents: documentBase64,
+                documentPreviews: formData.documentPreviews,
                 role: "supplier",
             };
             
             console.log("Submitting supplier registration data");
             
+            // Step 1: Register the user
             const response = await fetch('/api/auth/register', {
                 method: 'POST',
                 headers: {
@@ -125,10 +128,42 @@ const SupplierForm = ({ onSuccess, setError }) => {
                 throw new Error(data.message || "Registration failed");
             }
             
-            // Registration successful
+            // Step 2: Auto login after successful registration
+            const loginResponse = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email: formData.email,
+                    password: formData.password
+                }),
+            });
+            
+            const loginData = await loginResponse.json();
+            
+            if (!loginResponse.ok) {
+                // Registration succeeded but login failed - still show success and allow manual login
+                console.error("Auto-login failed after registration:", loginData.message);
+                onSuccess();
+                return;
+            }
+            
+            // Store user info in localStorage for the Header component to use
+            localStorage.setItem('userInfo', JSON.stringify(loginData.user));
+            
+            // Show success message
             onSuccess();
+            
+            // Redirect to supplier dashboard after a brief delay
+            setTimeout(() => {
+                router.push('/supplier-dashboard');
+            }, 1500);
+            
         } catch (error) {
             setError(error.message || "Failed to register. Please try again.");
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -204,7 +239,7 @@ const SupplierForm = ({ onSuccess, setError }) => {
         }
     };
 
-    // Added separate function for button click to handle multi-step form
+    // Function for button click to handle multi-step form
     const handleButtonClick = (e) => {
         e.preventDefault();
         if (step < 3) {
@@ -363,7 +398,6 @@ const SupplierForm = ({ onSuccess, setError }) => {
                         animate={{ opacity: 1, x: 0 }}
                         className="space-y-6"
                     >
-                        {/* ... Step 2 form fields (unchanged) ... */}
                         <div className="bg-indigo-50 rounded-lg p-6 border border-indigo-100">
                             <h2 className="text-xl font-semibold text-gray-800 mb-4">Business Verification</h2>
 
@@ -452,6 +486,7 @@ const SupplierForm = ({ onSuccess, setError }) => {
                             type="button"
                             onClick={() => setStep(step - 1)}
                             className="py-3 px-6 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-all duration-200"
+                            disabled={isSubmitting}
                         >
                             Back
                         </motion.button>
@@ -461,11 +496,19 @@ const SupplierForm = ({ onSuccess, setError }) => {
                         whileTap={{ scale: 0.98 }}
                         type="submit"
                         disabled={(step === 1 && (!formData.companyName || !formData.contactNumber || !formData.email || !formData.password || !formData.confirmPassword)) ||
-                            (step === 2 && (!formData.nidPassport || !formData.tradeLicense || formData.documents.length === 0))}
+                            (step === 2 && (!formData.nidPassport || !formData.tradeLicense || formData.documents.length === 0)) ||
+                            isSubmitting}
                         className={`${step > 1 ? 'ml-auto' : 'w-full'
-                            } py-3 px-6 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium rounded-lg hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-indigo-600 disabled:hover:to-purple-600`}
+                            } py-3 px-6 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium rounded-lg hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center`}
                     >
-                        {getStepLabel()}
+                        {isSubmitting ? (
+                            <>
+                                <FaSpinner className="animate-spin mr-2" />
+                                {step === 3 ? "Processing..." : "Loading..."}
+                            </>
+                        ) : (
+                            getStepLabel()
+                        )}
                     </motion.button>
                 </motion.div>
             </motion.form>

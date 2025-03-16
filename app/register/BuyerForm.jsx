@@ -125,7 +125,7 @@ const BuyerForm = ({ onSuccess, setError }) => {
                     password: formData.password,
                     nidPassport: formData.nidPassport,
                     role: 'buyer',
-                    kycImage: capturedImage,
+                    kycImage: capturedImage, // Make sure this is the base64 string
                 }),
             });
 
@@ -151,12 +151,18 @@ const BuyerForm = ({ onSuccess, setError }) => {
             
             if (!loginResponse.ok) {
                 // Registration succeeded but login failed
+                console.error("Auto-login failed after registration:", loginData.message);
                 onSuccess();
+                setTimeout(() => {
+                    router.push('/login');
+                }, 2000);
                 return;
             }
 
             // Store user info in localStorage for the Header component
             localStorage.setItem('userInfo', JSON.stringify(loginData.user));
+            
+            console.log("Login successful. User info stored in localStorage");
             
             // Show success message
             onSuccess();
@@ -164,7 +170,9 @@ const BuyerForm = ({ onSuccess, setError }) => {
             // Redirect to dashboard after a brief delay
             setTimeout(() => {
                 router.push('/buyer-dashboard');
-            }, 2000);
+                // Optional: Force refresh to update header state
+                // window.location.href = '/buyer-dashboard';
+            }, 1500);
             
         } catch (error) {
             console.error("Registration error:", error);

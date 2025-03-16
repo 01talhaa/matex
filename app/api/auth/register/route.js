@@ -5,12 +5,22 @@ import jwt from 'jsonwebtoken';
 import connectToDatabase from '@/src/lib/db';
 import User from '@/src/lib/models/User';
 
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '10mb', // Increase body size limit for base64 images
+    },
+    responseLimit: false, // Remove response size limit
+  },
+};
+
 export async function POST(req) {
     try {
         console.log("Registration route hit");
 
+        // Connect to the database first
         try {
-            await connectToDatabase(); // Establish database connection
+            await connectToDatabase();
             console.log("Database connected");
         } catch (dbError) {
             console.error("Database connection failed:", dbError);
@@ -20,14 +30,12 @@ export async function POST(req) {
             }, { status: 500 });
         }
 
+        // Parse request body with a timeout
         let body;
         try {
-            body = await req.json();
-            console.log("Request body received:", {
-                email: body.email,
-                role: body.role,
-                // omit password for security
-            });
+            const bodyText = await req.text();
+            body = JSON.parse(bodyText);
+            console.log("Request body processed");
         } catch (parseError) {
             console.error("Failed to parse request body:", parseError);
             return NextResponse.json({ 
@@ -36,49 +44,34 @@ export async function POST(req) {
             }, { status: 400 });
         }
 
-        const { email, password, role, documents, documentPreviews, ...otherData } = body;
+        // Extract data from request
+        const { email, password, role, kycImage, documents, documentPreviews, ...otherData } = body;
 
-        // Validate input (basic) - improve this!
+        // Basic validation
         if (!email || !password || !role) {
             console.log("Missing required fields");
             return NextResponse.json({ message: "Missing email, password or role" }, { status: 400 });
         }
 
-        try {
-            const existingUser = await User.findOne({ email });
-            console.log("Existing user check complete");
-            
-            if (existingUser) {
-                console.log("Email already taken");
-                return NextResponse.json({ message: "Email is already taken" }, { status: 400 });
-            }
-        } catch (err) {
-            console.error("Error checking existing user:", err);
-            return NextResponse.json({ message: "Error checking user existence" }, { status: 500 });
+        // Check for existing user
+        const existingUser = await User.findOne({ email }).lean();
+        if (existingUser) {
+            console.log("Email already taken");
+            return NextResponse.json({ message: "Email is already taken" }, { status: 400 });
         }
 
-        // Convert role to lowercase to match schema enum values
+        // Normalize role
         const normalizedRole = role.toLowerCase();
-        
-        // Check if the role is valid according to our schema
         if (!['buyer', 'supplier'].includes(normalizedRole)) {
             return NextResponse.json({ 
                 message: "Invalid role. Role must be either 'buyer' or 'supplier'." 
             }, { status: 400 });
         }
 
-        let hashedPassword;
-        try {
-            hashedPassword = await bcrypt.hash(password, 10);
-        } catch (hashError) {
-            console.error("Password hashing failed:", hashError);
-            return NextResponse.json({ 
-                message: "Error processing password", 
-                details: hashError.message 
-            }, { status: 500 });
-        }
+        // Hash password
+        const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Process file data (if any)
+        // Process user data
         const userData = {
             email,
             password: hashedPassword,
@@ -86,92 +79,85 @@ export async function POST(req) {
             ...otherData
         };
         
-        // Handle documents if they exist (base64 strings)
-        if (documents && Array.isArray(documents) && documents.length > 0) {
-            userData.documents = documents;
-            console.log(`Processing ${documents.length} document(s)`);
+        // Handle image uploads more efficiently
+        if (kycImage) {
+            // For buyers with KYC verification image
+            userData.kycImage = kycImage;
+            console.log("KYC image processed");
+        }
+        
+        // For suppliers with document uploads
+        if (documentPreviews && Array.isArray(documentPreviews) && documentPreviews.length > 0) {
+            // Use documentPreviews instead of documents (these are already base64)
+            userData.documents = documentPreviews;
+            console.log(`Processing ${documentPreviews.length} document(s)`);
         }
 
-        console.log("Preparing user data:", {
-            email: userData.email,
-            role: userData.role,
-            hasDocuments: userData.documents ? true : false,
-            documentCount: userData.documents ? userData.documents.length : 0
-        });
+        // Role-specific validation
+        if (normalizedRole === 'supplier' && !userData.companyName) {
+            return NextResponse.json({ 
+                message: "Company name is required for suppliers" 
+            }, { status: 400 });
+        }
 
+        // Create user
         try {
-            // Ensure all required fields are present according to the role
-            if (normalizedRole === 'supplier') {
-                // These fields might be important for a supplier
-                if (!userData.companyName) {
-                    return NextResponse.json({ 
-                        message: "Company name is required for suppliers" 
-                    }, { status: 400 });
-                }
-            }
-
+            // Create a new user instance
             const newUser = new User(userData);
+            
+            // Save to database
             await newUser.save();
             console.log("New user saved with ID:", newUser._id);
 
-            // Make sure JWT_SECRET is available
+            // Create JWT token
             const jwtSecret = process.env.JWT_SECRET || "default_secret";
-            if (process.env.JWT_SECRET === undefined) {
-                console.warn("JWT_SECRET not found in environment, using default secret");
-            }
+            const token = jwt.sign(
+                { userId: newUser._id, role: newUser.role, email: newUser.email },
+                jwtSecret,
+                { expiresIn: '7d' }
+            );
 
-            let token;
-            try {
-                token = jwt.sign(
-                    { userId: newUser._id, role: newUser.role, email: newUser.email },
-                    jwtSecret,
-                    { expiresIn: '7d' }
-                );
-                console.log("Token created successfully");
-            } catch (tokenError) {
-                console.error("Failed to generate JWT token:", tokenError);
-                return NextResponse.json({ 
-                    message: "Failed to generate authentication token", 
-                    details: tokenError.message 
-                }, { status: 500 });
-            }
+            // Prepare user info for response
+            const userInfo = {
+                id: newUser._id.toString(),
+                email: newUser.email,
+                role: newUser.role,
+            };
 
+            // Create the response
             const response = NextResponse.json({
-                user: {
-                    id: newUser._id,
-                    email: newUser.email,
-                    role: newUser.role,
-                },
+                user: userInfo,
+                token: token, // Send token so client can store it
                 message: "User created successfully"
             });
             
-            try {
-                response.cookies.set('token', token, {
-                    httpOnly: true,
-                    secure: process.env.NODE_ENV === 'production',
-                    sameSite: 'strict',
-                    maxAge: 7 * 24 * 60 * 60, // 7 days
-                    path: '/',
-                });
-            } catch (cookieError) {
-                console.error("Failed to set cookie:", cookieError);
-                // Continue without setting cookie - at least user was created
-            }
+            // Set cookies for authentication
+            response.cookies.set('token', token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'strict',
+                maxAge: 7 * 24 * 60 * 60, // 7 days
+                path: '/',
+            });
+
+            // Set a login indicator cookie
+            response.cookies.set('logged_in', 'true', {
+                httpOnly: false, // JavaScript can read this
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'strict',
+                maxAge: 7 * 24 * 60 * 60, // 7 days
+                path: '/',
+            });
 
             return response;
         } catch (err) {
-            console.error("Error saving user or generating token:", err);
+            console.error("Error creating user:", err);
             
-            // Check for MongoDB duplicate key error
             if (err.code === 11000) {
-                return NextResponse.json({ 
-                    message: "Email already exists", 
-                    details: "This email address is already registered"
-                }, { status: 400 });
+                return NextResponse.json({ message: "Email already exists" }, { status: 400 });
             }
             
             if (err.name === 'ValidationError') {
-                // Handle Mongoose validation errors
                 const validationErrors = Object.values(err.errors).map(e => e.message);
                 return NextResponse.json({ 
                     message: "Validation error", 
