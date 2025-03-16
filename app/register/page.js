@@ -4,29 +4,37 @@ import { motion } from "framer-motion";
 import { FaUserTie, FaShoppingCart, FaArrowLeft } from "react-icons/fa";
 import SupplierForm from "./SupplierForm";
 import BuyerForm from "./BuyerForm";
+import { useRouter } from "next/navigation";
 
 const RegisterPage = () => {
   const [selectedRole, setSelectedRole] = useState(null);
+  const [registrationError, setRegistrationError] = useState('');
+  const router = useRouter();
 
   const roles = [
-    { 
-      name: "Supplier", 
+    {
+      name: "Supplier",
       icon: FaUserTie,
       description: "Register as a supplier to showcase and sell your products"
     },
-    { 
-      name: "Buyer", 
+    {
+      name: "Buyer",
       icon: FaShoppingCart,
       description: "Sign up as a buyer to explore and purchase products"
     },
   ];
+
+  const handleRegistrationSuccess = () => {
+    setRegistrationError('');
+    router.push('/');
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-blue-50 to-purple-50 flex items-center justify-center p-6">
       {/* Decorative background elements */}
       <div className="absolute top-0 right-0 w-1/3 h-1/3 bg-gradient-to-br from-indigo-200 to-purple-200 rounded-full blur-3xl opacity-30 animate-pulse" />
       <div className="absolute bottom-0 left-0 w-1/3 h-1/3 bg-gradient-to-tr from-blue-200 to-indigo-200 rounded-full blur-3xl opacity-30 animate-pulse" />
-      
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -44,6 +52,13 @@ const RegisterPage = () => {
         <div className="mt-16">
           <h2 className="text-2xl font-bold text-center mb-2 text-gray-800">Create Account</h2>
           <p className="text-center text-gray-600 mb-8">Select your role to get started</p>
+
+          {registrationError && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+              <strong className="font-bold">Error:</strong>
+              <span className="block sm:inline">{registrationError}</span>
+            </div>
+          )}
 
           {!selectedRole ? (
             <motion.div
@@ -77,8 +92,8 @@ const RegisterPage = () => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.4 }}
             >
-              {selectedRole === "Supplier" && <SupplierForm />}
-              {selectedRole === "Buyer" && <BuyerForm />}
+              {selectedRole === "Supplier" && <SupplierForm onSuccess={handleRegistrationSuccess} setError={setRegistrationError} />}
+              {selectedRole === "Buyer" && <BuyerForm onSuccess={handleRegistrationSuccess} setError={setRegistrationError} />}
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
